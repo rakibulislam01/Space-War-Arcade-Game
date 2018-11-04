@@ -1,0 +1,287 @@
+For DataSet
+================================================================
+import os  # for creating folders
+import cv2  # openCV
+import dlib
+from .models import Name
+
+
+def dataset():
+    cap = cv2.VideoCapture(0)
+
+
+    name1 = Name.objects.latest('id')
+
+    name = name1.name
+    # name = input("Enter student's name : ")
+
+
+    sampleNum = 0
+    while True:
+        ret, img = cap.read()  # reading the camera input
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  # Converting to GrayScale
+
+
+
+
+
+           cv2.waitKey(200)  # waiting time of 200 milisecond
+        cv2.imshow('frame', img)  # showing the video input from camera on window
+        # cv2.waitKey(1)
+        if sampleNum >= 15:  # will take 20 faces
+            cv2.destroyAllWindows()
+            cap.release()
+            break
+
+
+
+===============================================================================================================
+For Data Train
+==============================================================================================================
+import imp
+import math
+import os
+import os.path
+import pickle
+import face_recognition
+from face_recognition.face_recognition_cli import image_files_in_folder
+from sklearn import neighbors
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+
+def train():
+    X = []
+    y = []
+
+    for class_dir in os.listdir(train_dir):
+        if not os.path.isdir(os.path.join(train_dir, class_dir)):
+            continue
+
+
+
+    if model_save_path is not None:
+        with open(model_save_path, 'wb') as f:
+            pickle.dump(knn_clf, f)
+
+    return knn_clf
+
+
+def traindataset():
+    print("Training KNN classifier...")
+    classifier = train()
+    print("Training complete!")
+
+
+=================================================================================================================
+For Face Recognition
+=================================================================================================================
+import pickle
+import imp
+import cv2
+import face_recognition
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+
+def predict():
+    if knn_clf is None and model_path is None:
+        raise Exception("Must supply knn classifier either though knn_clf or model_path")
+
+
+
+
+
+def show_labels_on_webcam(RGBFrame, predictions):
+    frame = RGBFrame
+
+    for name, (top, right, bottom, left) in predictions:
+        top *= 4
+        right *= 4
+        bottom *= 4
+        left *= 4
+
+
+        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+        font = cv2.FONT_HERSHEY_DUPLEX
+        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+
+    cv2.imshow('Face Recognition', frame)
+
+
+def DjangoFace():
+
+    global video_capture
+    video_capture = cv2.VideoCapture(0)
+
+    while True:
+        ret, frame = video_capture.read()
+
+        small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+
+        rgb_small_frame = small_frame[:, :, ::-1]
+
+
+        show_labels_on_webcam(frame, predictions)
+
+        # Hit 'q' on the keyboard to quit!
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    video_capture.release()
+    cv2.destroyAllWindows()
+
+
+=================================================================================================================================================
+For Online Form 
+==========================================================================================================================
+from django import forms
+
+
+class NameForm(forms.Form):
+    name = forms.CharField(max_length=20,
+                           widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Name'}))
+
+
+=================================================================================================================================================
+For Online Database
+==========================================================================================================================
+from django.db import models
+
+
+# Create your models here.
+class Name(models.Model):
+    name = models.CharField(max_length=30)
+
+    def __str__(self):
+        return 'Name: {}, ID: {}'.format(self.name, self.id)
+
+
+
+=================================================================================================================================================
+For home page
+==========================================================================================================================
+
+					<section id="banner">
+						<div class="inner">
+							<h2>Face Recognition</h2>
+							<p>Do you want to recognition your face?<br />
+							This application is for you.<br />
+							crafted by <a href="https://www.facebook.com/rakibprince33">Md.Rakibul Islam & Md.Rafiqul Islam</a>.</p>
+							<ul class="actions special">
+								<li><a href="{% url 'home' %}" class="button primary">Home</a></li>
+								<li><a href="{% url 'sign' %}" class="button primary">Create Data Set</a></li>
+								<li><a href="{% url 'traindata' %}" class="button primary">Train Data Set</a></li>
+								<li><a href="{% url 'recognition' %}" class="button primary">Face Recognition</a></li>
+							</ul>
+						</div>
+						<a href="#one" class="more scrolly">Learn More</a>
+					</section>
+
+
+
+
+=================================================================================================================================================
+For Appendex Two ///////////////////Dataset
+=======================================================================================================================
+
+import cv2
+
+detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+cam = cv2.VideoCapture(0)
+
+Id = input("Enter your id")
+SampleNum = 0
+
+while True:
+    ret, img = cam.read()
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = detector.detectMultiScale(gray, 1.3, 10)
+
+    for (x, y, w, h) in faces:
+        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+        SampleNum = SampleNum + 1
+        cv2.imwrite("dataSet/user." + Id + '.' + str(SampleNum) + ".jpg", gray[y:y + h, x:x + w])
+
+    cv2.imshow('frame', img)
+    if cv2.waitKey(100) & 0xFF == ord('q'):
+        break
+    elif SampleNum > 20:
+        break
+
+cam.release()
+cv2.destroyAllWindows()
+
+
+
+
+
+
+=================================================================================================================================================
+For Appendex Two ///////////////////Train
+=======================================================================================================================
+
+import cv2
+import os
+import numpy as np
+from PIL import Image
+
+recognizer = cv2.face
+
+
+def getImageAndLabels(path):
+    imagePaths = [os.path.join(path, f) for f in os.listdir(path)]
+    faceSamples = []
+    Ids = []
+
+    for imagePath in imagePaths:
+        pilImage = Image.open(imagePath).convert('L')
+
+        for (x, y, w, h) in faces:
+            faceSamples.append(imageNp[y:y + h, x:x + w])
+            Ids.append(Id)
+    return faceSamples, Ids
+
+
+cv2.destroyAllWindows()
+
+
+
+
+
+=================================================================================================================================================
+For Appendex Two ///////////////////Recognition
+=======================================================================================================================
+
+import cv2
+import os
+import numpy as np
+from PIL import Image
+
+# recognizer = cv2.createLBPHFaceRecognizer()
+# recognizer = cv2.face.LBPHFaceRecognizer_create()
+recognizer = cv2.face.E
+detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+
+
+def getImageAndLabels(path):
+    imagePaths = [os.path.join(path, f) for f in os.listdir(path)]
+    faceSamples = []
+    Ids = []
+
+    for imagePath in imagePaths:
+        pilImage = Image.open(imagePath).convert('L')
+        for (x, y, w, h) in faces:
+            faceSamples.append(imageNp[y:y + h, x:x + w])
+            Ids.append(Id)
+    return faceSamples, Ids
+
+
+faces, Ids = getImageAndLabels('dataSet')
+recognizer.train(faces, np.array(Ids))
+recognizer.save('trainner/trainner.yml')
+cv2.destroyAllWindows()
+
+
+
